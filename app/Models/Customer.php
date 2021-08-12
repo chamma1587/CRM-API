@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\ModelEventThrower;
 
 /**
  * @OA\Schema(
@@ -16,23 +17,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Customer extends Model
 {
-    use HasFactory;
-
+    use HasFactory, ModelEventThrower;
+   
 
     protected $fillable = [
         
-        'uuid', 'first_name', 'last_name', 'email'
-    ];
-
-    
-    /**
-     * customer phone numbers
-     *
-     * @return void
-     */
-    public function phoneNumbers()
-    {
-        return $this->hasMany('App\Models\CustomerPhoneNumber');
-    }
+        'uuid', 'first_name', 'last_name', 'email', 'phone_numbers'
+    ];   
+   
 
 }

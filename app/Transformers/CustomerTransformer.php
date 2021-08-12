@@ -7,11 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerTransformer extends TransformerAbstract
 {
-    protected $defaultIncludes = ['phoneNumbers'];
-     /**
-     * @param Model $model
-     * @return array
-     */
+    /**
+    * @param Model $model
+    * @return array
+    */
 
     public function transform(Model $model)
     {
@@ -19,13 +18,9 @@ class CustomerTransformer extends TransformerAbstract
             'uuid'       => $model->uuid,
             'first_name' => $model->first_name,
             'last_name'  => $model->last_name,
-            'email'      => $model->email
+            'email'      => $model->email,
+            'phone_numbers'  => json_decode($model->phone_numbers),
         ];
     }
 
-    public function includePhoneNumbers(Model $model)
-    {
-        if(!empty($model->phoneNumbers))
-            return $this->collection($model->phoneNumbers, new PhoneNumbersTransformer());
-    }
 }

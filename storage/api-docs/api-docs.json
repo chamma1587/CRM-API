@@ -19,13 +19,58 @@
         }
     ],
     "paths": {
-        "/api": {},
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "AdminLogin"
+                ],
+                "summary": "AdminLogin",
+                "security": [],
+                "description": "Returns access token",
+                "operationId": "adminLogin",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/User"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                }
+            }
+        },
         "/api/crm/customers/{filters}": {
             "get": {
                 "tags": [
                     "Customers"
                 ],
                 "summary": "Get list of customers",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "description": "Returns list of customers",
                 "operationId": "getCustomerList",
                 "parameters": [
@@ -69,6 +114,11 @@
                     "Customers"
                 ],
                 "summary": "Get Customer by uuid",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "description": "Returns customer by uuid",
                 "operationId": "getCustomer",
                 "parameters": [
@@ -112,18 +162,21 @@
                 ],
                 "summary": "Create Customer",
                 "description": "Create Customer",
-                "operationId": "createCustomer",
-                "parameters": [
+                "security": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Pet object that needs to be added to the store",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/Customer"
-                        }
+                        "bearerAuth": []
                     }
                 ],
+                "operationId": "createCustomer",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Customer"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -163,20 +216,25 @@
                     "Customers"
                 ],
                 "summary": "Update Customer",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "description": "Update Customer",
                 "operationId": "updateCustomer",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Customer"
+                            }
+                        }
+                    }
+                },
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Pet object that needs to be added to the store",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/Customer"
-                        }
-                    },
-                    {
-                        "name": "customerId",
+                        "name": "customerUuid",
                         "in": "path",
                         "description": "Customer uuid",
                         "required": true,
@@ -218,17 +276,22 @@
                 }
             }
         },
-        "/api/crm/customer/{customerId}": {
+        "/api/crm/{customerDeleteUuid}/customer": {
             "delete": {
                 "tags": [
                     "Customers"
                 ],
                 "summary": "Delete Customer by uuid",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "description": "Delete customer by uuid",
                 "operationId": "deleteCustomer",
                 "parameters": [
                     {
-                        "name": "customerId",
+                        "name": "customerDeleteUuid",
                         "in": "path",
                         "description": "Customer uuid",
                         "required": true,
@@ -266,19 +329,22 @@
                     "Customers"
                 ],
                 "summary": "Import customers by csv file",
-                "description": "Import customers by csv file",
-                "operationId": "importCustomers",
-                "parameters": [
+                "security": [
                     {
-                        "name": "file",
-                        "in": "path",
-                        "description": "Csv file for customer list",
-                        "required": true,
-                        "schema": {
-                            "type": "file"
-                        }
+                        "bearerAuth": []
                     }
                 ],
+                "description": "Import customers by csv file",
+                "operationId": "importCustomers",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Import"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -335,15 +401,42 @@
                         }
                     }
                 }
+            },
+            "User": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "example": "admin@example.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "password"
+                    }
+                }
+            },
+            "Import": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                   
+                },
+                "required": ["file"]
             }
         },
-        "securitySchemes": {          
+        "securitySchemes": {
             "bearerAuth": {
-				"type": "http",
-				"description": "Passport security.",
-				"scheme": "bearer",
-				"bearerFormat": "JWT"
-			}
+                "type": "http",
+                "description": "Passport security.",
+                "scheme": "bearer"
+            }
         }
     },
     "tags": [

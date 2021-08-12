@@ -24,20 +24,18 @@ interface CustomerRepositoryInterface
      * Create Customer
      *
      * @param  mixed $payload
-     * @param  array $contactNumbers
      * @return void
      */
-    public function createCustomer($payload, $contactNumbers);
+    public function createCustomer($payload);
     
     /**
      * Update Customer
      *
      * @param  mixed $payload
-     * @param  array $contactNumbers
      * @param  mixed $customerId
      * @return void
      */
-    public function updateCustomer($payload, $contactNumbers, $customerId);
+    public function updateCustomer($payload, $customerId);
     
     /**
      * Delete Customer
@@ -49,10 +47,11 @@ interface CustomerRepositoryInterface
 
     
     /**
-     * getCustomerByEmail
+     * createOrUpdateCustomer
      *
-     * @param  mixed $email
+     * @param  mixed $payload
      * @return void
      */
-    public function getCustomerByEmail($email);
+    public function createOrUpdateCustomer($payload);
+
 }

@@ -9,11 +9,13 @@ use App\Traits\Filters;
 use App\Traits\UuidManager;
 use Illuminate\Http\Request;
 use Dingo\Api\Routing\Helpers;
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Imports\CustomersImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Route;
 use App\Transformers\CustomerTransformer;
-use Dingo\Api\Exception\ValidationHttpException;
+
 use App\Repository\Crm\Contracts\CustomerRepositoryInterface;
 use App\Repository\Common\Contracts\CommonRepositoryInterface;
 
@@ -187,28 +189,15 @@ class CustomerController extends Controller
     *      )
     *     )
     */
-    public function createCustomer(Request $request)
+    public function createCustomer(StoreCustomerRequest $request)
     {
-        $createCustomerPayload =  $request->all();
-        
-        $validationFields = [
-            'first_name'    => 'required|string|max:50',
-            'last_name'     => 'required|string|max:50',
-            'email'         => 'required|string|email|max:50|unique:customers'
-        ];
-
-        $validator = Validator::make($createCustomerPayload, $validationFields);
-        
-        if ($validator->fails()) {
-            throw new ValidationHttpException($validator->errors());
-        }
+        $createCustomerPayload =  $request->all();    
 
         $uuid = UuidManager::generateUuid();
         $createCustomerPayload['uuid'] = $uuid;
+        $createCustomerPayload['phone_numbers'] = json_encode($createCustomerPayload['phone_numbers']);
 
-        $contactNumbers = $createCustomerPayload['phone_numbers'];
-
-        $createCustomer = $this->customerRepository->createCustomer($createCustomerPayload, $contactNumbers);
+        $createCustomer = $this->customerRepository->createCustomer($createCustomerPayload);
         
         if (!$createCustomer) {
             return  $this->response->error('Customer not created. Please try again!', 500);
@@ -293,7 +282,7 @@ class CustomerController extends Controller
      *      )
      *     )
      */
-    public function updateCustomer(Request $request, $customerUuid)
+    public function updateCustomer(UpdateCustomerRequest $request, $customerUuid)
     {
         $customer =  $this->commonRepository->getByUuid('Customer', $customerUuid);
 
@@ -301,23 +290,12 @@ class CustomerController extends Controller
             return  $this->response->error('Customer not found', 404);
         }
 
-        $payload =  $request->all();
+        $payload =  $request->all();        
+      
+
+        $payload['phone_numbers'] = json_encode($payload['phone_numbers']);
         
-        $validationFields = [
-            'first_name' => 'required|string|max:50',
-            'last_name'  => 'required|string|max:50',
-            'email'     => 'required|string|email|max:50|unique:customers,email,'.$customer->id
-        ];
-
-        $validator = Validator::make($payload, $validationFields);
-        
-        if ($validator->fails()) {
-            throw new ValidationHttpException($validator->errors());
-        }
-
-        $contactNumbers = $payload['phone_numbers'];
-
-        $updateCustomer = $this->customerRepository->updateCustomer($payload, $contactNumbers, $customer->id);
+        $updateCustomer = $this->customerRepository->updateCustomer($payload, $customer->id);
         
         if (!$updateCustomer) {
             return  $this->response->error('Customer not updated. Please try again!', 500);

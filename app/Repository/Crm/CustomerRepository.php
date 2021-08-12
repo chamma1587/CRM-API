@@ -20,19 +20,22 @@ class CustomerRepository implements CustomerRepositoryInterface
      */
     public function getCustomerList($keyword)
     {
-        $customers = Customer::select('id', 'uuid', 'first_name', 'last_name', 'email')
+        try {
+            $customers = Customer::select('id', 'uuid', 'first_name', 'last_name', 'email', 'phone_numbers')
                     ->when($keyword, function ($query, $search) {
                         $query->where(function ($q) use ($search) {
                             $q->where('first_name', 'like', "%$search%")
                                 ->orWhere('last_name', 'like', "%$search%")
                                 ->orWhere('email', 'like', "%$search%")
-                                ->orWhereHas('phoneNumbers', function ($withQuery) use ($search) {
-                                    $withQuery->where('phone_number', (int)$search);
-                                });
+                                ->orWhereJsonContains('phone_numbers', ["$search"] );
                         });
                     });
-     
-        return $customers->paginate(10);
+            return $customers->paginate(10);
+        } catch (\Throwable $th) {           
+            DB::rollback();
+            \Log::error($th);
+            abort(500, 'Something went wrong please contact administrator');
+        }
     }
 
        
@@ -44,7 +47,14 @@ class CustomerRepository implements CustomerRepositoryInterface
      */
     public function getCustomerById($customerId)
     {
-        return  Customer::where('id', $customerId)->first();
+        try {
+            return  Customer::select('id', 'uuid', 'first_name', 'last_name', 'email')
+                        ->where('id', $customerId)->first();
+        } catch (\Throwable $th) {
+            DB::rollback();
+            \Log::error($th);
+            abort(500, 'Something went wrong please try agin later');
+        }
     }
 
         
@@ -54,29 +64,21 @@ class CustomerRepository implements CustomerRepositoryInterface
      * @param  mixed $payload
      * @return void
      */
-    public function createCustomer($payload, $phoneNumbers)
+    public function createCustomer($payload)
     {
         DB::beginTransaction();
 
         try {
             $customer = Customer::create($payload);
-
-            if ($customer) {
-                if (count($phoneNumbers) > 0) {
-                    $contactNumbers = $this->customerPhoneNumbersProcess($phoneNumbers);
-                    $customer->phoneNumbers()->saveMany($contactNumbers);
-                }
-            }
-
             DB::commit();
+
             return $customer;
-        } catch (\Exception $e) {
+        } catch (\Throwable $th) {
             DB::rollback();
-            \Log::error($e);
-            return false;
+            \Log::error($th);
+            abort(500, 'Could not create customer please try again later');
         }
     }
-
 
       
     /**
@@ -87,31 +89,22 @@ class CustomerRepository implements CustomerRepositoryInterface
      * @param  mixed $customerId
      * @return void
      */
-    public function updateCustomer($payload, $contactNumbers, $customerId)
+    public function updateCustomer($payload,$customerId)
     {
         DB::beginTransaction();
 
         try {
             $customer = Customer::where('id', $customerId)->first();
-
-            $customer->first_name = $payload['first_name'];
-            $customer->last_name  = $payload['last_name'];
-            $customer->email      = $payload['email'];
-            $customer->save();
-
-            $customer->phoneNumbers()->delete();
-
-            if (count($contactNumbers) > 0) {
-                $contactNumbers = $this->customerPhoneNumbersProcess($contactNumbers);
-                $customer->phoneNumbers()->saveMany($contactNumbers);
+            if ($customer) {
+                $customer->update($payload);
             }
 
             DB::commit();
             return $customer;
-        } catch (\Exception $e) {
+        } catch (\Throwable $th) {
             DB::rollback();
-            \Log::error($e);
-            return false;
+            \Log::error($th);
+            abort(500, 'Could not update customer please try again later');
         }
     }
 
@@ -124,20 +117,13 @@ class CustomerRepository implements CustomerRepositoryInterface
      */
     public function deleteCustomer($customerId)
     {
-        DB::beginTransaction();
-
         try {
-            $customer = Customer::where('id', $customerId)->first();
-            if ($customer) {
-                $customer->phoneNumbers()->delete();
-                $customer->delete();
-            }
-            DB::commit();
+            $customer = Customer::where('id', $customerId)
+                                ->delete();
             return true;
-        } catch (\Exception $e) {
-            DB::rollback();
-            \Log::error($e);
-            return false;
+        } catch (\Throwable $th) {          
+            \Log::error($th);
+            abort(500, 'Could not delete customer please try again later');
         }
     }
 
@@ -160,16 +146,26 @@ class CustomerRepository implements CustomerRepositoryInterface
         return $contactNumbers;
     }
 
+    
     /**
-     * getCustomerByEmail
+     * createOrUpdateCustomer
      *
-     * @param  mixed $email
+     * @param  mixed $payload
      * @return void
      */
-    public function getCustomerByEmail($email)
+    public function createOrUpdateCustomer($payload)
     {
-        return  Customer::select('id')
-                        ->where('email', $email)
-                        ->first();
+        DB::beginTransaction();
+
+        try {           
+            Customer::upsert($payload,'email');           
+            DB::commit();
+          
+        } catch (\Throwable $th) {
+            dd($th);
+            DB::rollback();
+            \Log::error($th);
+            abort(500, 'Could not insert / update customer please try again later');
+        }
     }
 }

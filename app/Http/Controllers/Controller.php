@@ -36,35 +36,36 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
      * )
      */
 class Controller extends BaseController
-{   
+{
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-     /**
-     * Success response
-     *
-     * @param mixed $modely
-     * @param Transformer $transformer
-     * @param string $message
-     * @param $string $code
-     * 
-     * @return  $mixed
-     */
+    /**
+    * Success response
+    *
+    * @param mixed $modely
+    * @param Transformer $transformer
+    * @param string $message
+    * @param $string $code
+    *
+    * @return  $mixed
+    */
     public function responseSuccess($model, $transformer, $message = 'Success', $code = 200)
     {
         $meta = [
             'message'=> $message,
             'status_code' => $code,
         ];
-        if(!$model)
+        if (!$model) {
             return $this->response->array($meta);
-
+        }
+            
         return $this->response->item($model, $transformer)->setMeta($meta);
     }
      
 
 
     public function errorResponse($message = 'Error', $code = 500)
-    {  
+    {
         $meta = [
             'message'=> $message,
             'status_code' => $code,
@@ -72,5 +73,4 @@ class Controller extends BaseController
 
         return $this->response->array($meta);
     }
-    
 }

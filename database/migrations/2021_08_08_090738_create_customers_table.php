@@ -19,6 +19,7 @@ class CreateCustomersTable extends Migration
             $table->string('first_name', 30)->index('first_name');
             $table->string('last_name', 30)->index('last_name');          
             $table->string('email', 100)->unique(); 
+            $table->json('phone_numbers')->nullable(); 
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();           
             $table->nullableTimestamps();       
@@ -36,7 +37,7 @@ class CreateCustomersTable extends Migration
     {
         Schema::table('customers', function (Blueprint $table) {
             $table->dropIndex('first_name');                    
-            $table->dropIndex('last_name');               
+            $table->dropIndex('last_name');          
         });
 
         Schema::dropIfExists('customers');
